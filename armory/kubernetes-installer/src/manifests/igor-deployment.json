@@ -1,0 +1,162 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+      "artifact.spinnaker.io/name": "\"armory-igor\"",
+      "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+      "moniker.spinnaker.io/application": "\"armory\"",
+      "moniker.spinnaker.io/cluster": "\"igor\""
+    },
+    "name": "armory-igor",
+    "namespace": "${NAMESPACE}",
+    "labels": {
+      "app": "armory-igor"
+    }
+  },
+  "spec": {
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": 0,
+        "maxSurge": 3
+      }
+    },
+    "replicas": ${IGOR_REPLICAS},
+    "selector": {
+      "matchLabels": {
+        "app": "armory-igor"
+      }
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+          "artifact.spinnaker.io/name": "\"armory-igor\"",
+          "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+          "moniker.spinnaker.io/application": "\"armory\"",
+          "moniker.spinnaker.io/cluster": "\"igor\""
+        },
+        "labels": {
+          "app": "armory-igor"
+        }
+      },
+      "spec": {
+        "securityContext": {
+          "runAsUser": 0
+        },
+        "containers": [
+          {
+            "name": "armory-igor",
+            "image": "${DOCKER_REGISTRY}/spinnaker-igor-slim:${igor_version}",
+            "command": [
+              "bash",
+              "-c"
+            ],
+            "args": [
+              "bash /opt/spinnaker/config/default/fetch.sh && cd /home/spinnaker/config && /opt/igor/bin/igor"
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "init-env"
+                }
+              }
+            ],
+            "env": [
+              {
+                "name": "IGOR_PORT_MAPPING",
+                "value": "-8088:8088"
+              },
+              {
+                "name": "JAVA_OPTS",
+                "value": "-Xmx${IGOR_JAVA_MEMORY}"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "${IGOR_CPU}",
+                "memory": "${IGOR_MEMORY}"
+              },
+              "limits": {
+                "cpu": "${IGOR_CPU}",
+                "memory": "${IGOR_MEMORY}"
+              }
+            },
+            "ports": [
+              {
+                "containerPort": 8088
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 8088
+              },
+              "initialDelaySeconds": 30,
+              "periodSeconds": 5,
+              "successThreshold": 5
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 8088
+              },
+              "initialDelaySeconds": 180,
+              "periodSeconds": 3
+            },
+            "volumeMounts": [
+              {
+                "name": "podinfo",
+                "mountPath": "/etc/podinfo",
+                "readOnly": false
+              },
+              {
+                "name": "default-config",
+                "mountPath": "/opt/spinnaker/config/default"
+              },
+              {
+                "name": "custom-config",
+                "mountPath": "/opt/spinnaker/config/custom"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "custom-config",
+            "configMap": {
+              "name": "custom-config"
+            }
+          },
+          {
+            "name": "default-config",
+            "configMap": {
+              "name": "default-config"
+            }
+          },
+          {
+            "name": "podinfo",
+            "downwardAPI": {
+              "items": [
+                {
+                  "path": "labels",
+                  "fieldRef": {
+                    "fieldPath": "metadata.labels"
+                  }
+                },
+                {
+                  "path": "annotations",
+                  "fieldRef": {
+                    "fieldPath": "metadata.annotations"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

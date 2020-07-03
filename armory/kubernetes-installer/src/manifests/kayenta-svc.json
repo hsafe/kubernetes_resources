@@ -1,0 +1,20 @@
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+      "name": "armory-kayenta",
+      "namespace": "${NAMESPACE}"
+    },
+    "spec": {
+      "selector": {
+        "app": "armory-kayenta"
+      },
+      "ports": [
+        {
+          "protocol": "TCP",
+          "port": 8090,
+          "targetPort": 8090
+        }
+      ]
+    }
+}

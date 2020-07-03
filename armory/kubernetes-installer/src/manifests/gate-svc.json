@@ -1,0 +1,30 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "armory-gate",
+    "namespace": "${NAMESPACE}",
+    "annotations": {
+      "cloud.google.com/load-balancer-type": "${LB_TYPE}"
+    }
+  },
+  "spec": {
+    "selector": {
+      "app": "armory-gate"
+    },
+    "ports": [
+      {
+        "name": "gate-port",
+        "protocol": "TCP",
+        "port": 8084,
+        "targetPort": 8084
+      },
+      {
+        "name": "gate-api-port",
+        "protocol": "TCP",
+        "port": 8085,
+        "targetPort": 8085
+      }
+    ]
+  }
+}

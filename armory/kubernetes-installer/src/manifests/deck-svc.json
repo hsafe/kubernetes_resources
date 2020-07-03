@@ -1,0 +1,23 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "armory-deck",
+    "namespace": "${NAMESPACE}",
+    "annotations": {
+      "cloud.google.com/load-balancer-type": "${LB_TYPE}"
+    }
+  },
+  "spec": {
+    "selector": {
+      "app": "armory-deck"
+    },
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": 80,
+        "targetPort": 9000
+      }
+    ]
+  }
+}

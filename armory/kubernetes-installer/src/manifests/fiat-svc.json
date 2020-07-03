@@ -1,0 +1,20 @@
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+      "name": "armory-fiat",
+      "namespace": "${NAMESPACE}"
+    },
+    "spec": {
+      "selector": {
+        "app": "armory-fiat"
+      },
+      "ports": [
+        {
+          "protocol": "TCP",
+          "port": 7003,
+          "targetPort": 7003
+        }
+      ]
+    }
+}

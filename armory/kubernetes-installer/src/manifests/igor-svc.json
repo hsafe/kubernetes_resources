@@ -1,0 +1,20 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "armory-igor",
+    "namespace": "${NAMESPACE}"
+  },
+  "spec": {
+    "selector": {
+      "app": "armory-igor"
+    },
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": 8088,
+        "targetPort": 8088
+      }
+    ]
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "armory-orca",
+    "namespace": "${NAMESPACE}"
+  },
+  "spec": {
+    "selector": {
+      "app": "armory-orca"
+    },
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": 8083,
+        "targetPort": 8083
+      }
+    ]
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+      "artifact.spinnaker.io/name": "\"armory-gate\"",
+      "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+      "moniker.spinnaker.io/application": "\"armory\"",
+      "moniker.spinnaker.io/cluster": "\"gate\""
+    },
+    "name": "armory-gate",
+    "namespace": "${NAMESPACE}",
+    "labels": {
+      "app": "armory-gate"
+    }
+  },
+  "spec": {
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": 0,
+        "maxSurge": "100%"
+      }
+    },
+    "replicas": ${GATE_REPLICAS},
+    "selector": {
+      "matchLabels": {
+        "app": "armory-gate"
+      }
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+          "artifact.spinnaker.io/name": "\"armory-gate\"",
+          "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+          "moniker.spinnaker.io/application": "\"armory\"",
+          "moniker.spinnaker.io/cluster": "\"gate\""
+        },
+        "labels": {
+          "app": "armory-gate"
+        }
+      },
+      "spec": {
+        "securityContext": {
+          "runAsUser": 0
+        },
+        "containers": [
+          {
+            "name": "armory-gate",
+            "image": "${DOCKER_REGISTRY}/gate-armory:${gate_armory_version}",
+            "command": [
+              "bash",
+              "-c"
+            ],
+            "args": [
+              "bash /opt/spinnaker/config/default/fetch.sh gate && cd /home/spinnaker/config && /opt/gate/bin/gate"
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "init-env"
+                }
+              }
+            ],
+            "env": [
+              {
+                "name": "GATE_PORT_MAPPING",
+                "value": "-8084:8084"
+              },
+              {
+                "name": "GATE_API_PORT_MAPPING",
+                "value": "-8085:8085"
+              },
+              {
+                "name": "JAVA_OPTS",
+                "value": "-Xmx${GATE_JAVA_MEMORY}"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "${GATE_CPU}",
+                "memory": "${GATE_MEMORY}"
+              },
+              "limits": {
+                "cpu": "${GATE_CPU}",
+                "memory": "${GATE_MEMORY}"
+              }
+            },
+            "ports": [
+              {
+                "name": "gate-port",
+                "containerPort": 8084
+              },
+              {
+                "name": "gate-api-port",
+                "containerPort": 8085
+              }
+            ],
+            "readinessProbe": {
+              "exec": {
+                "command": [
+                  "/bin/bash",
+                  "-c",
+                  "wget -O - http://localhost:8084/health?checkDownstreamServices=true&downstreamServices=true || wget -O - https://localhost:8084/health?checkDownstreamServices=true&downstreamServices=true"
+                ]
+              },
+              "initialDelaySeconds": 30,
+              "periodSeconds": 5,
+              "successThreshold": 10
+            },
+            "livenessProbe": {
+              "exec": {
+                "command": [
+                  "/bin/bash",
+                  "-c",
+                  "wget -O - http://localhost:8084/health || wget -O - https://localhost:8084/health"
+                ]
+              },
+              "initialDelaySeconds": 240,
+              "periodSeconds": 5,
+              "failureThreshold": 5
+            },
+            "volumeMounts": [
+              {
+                "name": "podinfo",
+                "mountPath": "/etc/podinfo",
+                "readOnly": false
+              },
+              {
+                "name": "default-config",
+                "mountPath": "/opt/spinnaker/config/default"
+              },
+              {
+                "name": "custom-config",
+                "mountPath": "/opt/spinnaker/config/custom"
+              },
+              {
+                "name": "nginx-certs",
+                "mountPath": "/opt/nginx/certs"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "custom-config",
+            "configMap": {
+              "name": "custom-config"
+            }
+          },
+          {
+            "name": "default-config",
+            "configMap": {
+              "name": "default-config"
+            }
+          },
+          {
+            "name": "nginx-certs",
+            "secret": {
+              "secretName": "${nginx_certs_secret_name}"
+            }
+          },
+          {
+            "name": "podinfo",
+            "downwardAPI": {
+              "items": [
+                {
+                  "path": "labels",
+                  "fieldRef": {
+                    "fieldPath": "metadata.labels"
+                  }
+                },
+                {
+                  "path": "annotations",
+                  "fieldRef": {
+                    "fieldPath": "metadata.annotations"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

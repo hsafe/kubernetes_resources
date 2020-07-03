@@ -1,0 +1,178 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+      "artifact.spinnaker.io/name": "\"armory-clouddriver\"",
+      "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+      "moniker.spinnaker.io/application": "\"armory\"",
+      "moniker.spinnaker.io/cluster": "\"clouddriver\""
+    },
+    "name": "armory-clouddriver",
+    "namespace": "${NAMESPACE}",
+    "labels": {
+      "app": "armory-clouddriver"
+    }
+  },
+  "spec": {
+    "minReadySeconds": 60,
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": 0,
+        "maxSurge": "100%"
+      }
+    },
+    "replicas": ${CLOUDDRIVER_REPLICAS},
+    "selector": {
+      "matchLabels": {
+        "app": "armory-clouddriver"
+      }
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+          "artifact.spinnaker.io/name": "\"armory-clouddriver\"",
+          "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+          "moniker.spinnaker.io/application": "\"armory\"",
+          "moniker.spinnaker.io/cluster": "\"clouddriver\""
+        },
+        "labels": {
+          "app": "armory-clouddriver"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "name": "armory-clouddriver",
+            "image": "${DOCKER_REGISTRY}/spinnaker-clouddriver-slim:${clouddriver_version}",
+            "command": [
+              "bash",
+              "-c"
+            ],
+            "args": [
+              "bash /opt/spinnaker/config/default/fetch.sh && cd /home/spinnaker/config && /opt/clouddriver/bin/clouddriver"
+            ],
+            "envFrom": [
+              {
+                "configMapRef": {
+                  "name": "init-env"
+                }
+              }
+            ],
+            "env": [
+              {
+                "name": "JAVA_OPTS",
+                "value": "-Xmx${CLOUDDRIVER_JAVA_MEMORY}"
+              }
+            ],
+            "resources": {
+              "requests": {
+                "cpu": "${CLOUDDRIVER_CPU}",
+                "memory": "${CLOUDDRIVER_MEMORY}"
+              },
+              "limits": {
+                "cpu": "${CLOUDDRIVER_CPU}",
+                "memory": "${CLOUDDRIVER_MEMORY}"
+              }
+            },
+            "ports": [
+              {
+                "containerPort": 7002
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 7002
+              },
+              "initialDelaySeconds": 30,
+              "periodSeconds": 3,
+              "successThreshold": 5,
+              "failureThreshold": 5
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/health",
+                "port": 7002
+              },
+              "initialDelaySeconds": 180,
+              "failureThreshold": 5,
+              "periodSeconds": 3
+            },
+            "volumeMounts": [
+              {
+                "name": "podinfo",
+                "mountPath": "/etc/podinfo",
+                "readOnly": false
+              },
+              {
+                "name": "aws-s3-credentials",
+                "mountPath": "/home/spinnaker/.aws"
+              },
+              {
+                "name": "custom-credentials",
+                "mountPath": "/opt/spinnaker/credentials/custom"
+              },
+              {
+                "name": "default-config",
+                "mountPath": "/opt/spinnaker/config/default"
+              },
+              {
+                "name": "custom-config",
+                "mountPath": "/opt/spinnaker/config/custom"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "aws-s3-credentials",
+            "secret": {
+              "secretName": "aws-s3-credentials"
+            }
+          },
+          {
+            "name": "custom-config",
+            "configMap": {
+              "name": "custom-config"
+            }
+          },
+          {
+            "name": "default-config",
+            "configMap": {
+              "name": "default-config"
+            }
+          },
+          {
+            "name": "custom-credentials",
+            "secret": {
+              "secretName": "${custom_credentials_secret_name}"
+            }
+          },
+          {
+            "name": "podinfo",
+            "downwardAPI": {
+              "items": [
+                {
+                  "path": "labels",
+                  "fieldRef": {
+                    "fieldPath": "metadata.labels"
+                  }
+                },
+                {
+                  "path": "annotations",
+                  "fieldRef": {
+                    "fieldPath": "metadata.annotations"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}

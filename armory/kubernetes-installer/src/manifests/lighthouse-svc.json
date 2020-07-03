@@ -1,0 +1,20 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "armory-lighthouse",
+    "namespace": "${NAMESPACE}"
+  },
+  "spec": {
+    "selector": {
+      "app": "armory-lighthouse"
+    },
+    "ports": [
+      {
+        "protocol": "TCP",
+        "port": 5000,
+        "targetPort": 5000
+      }
+    ]
+  }
+}

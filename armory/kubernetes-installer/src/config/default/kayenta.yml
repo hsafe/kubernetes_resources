@@ -1,0 +1,109 @@
+
+server:
+  port: 8090
+
+kayenta:
+  atlas:
+    enabled: false
+#    stageTimeoutMinutes: 3
+#    maxBackoffPeriodSeconds: 30
+#    accounts:
+#      - name:
+#        endpoint:
+#          baseUrl: http://localhost:7101
+#        namespace:
+#        supportedTypes:
+#          - METRICS_STORE
+
+  google:
+    enabled: false
+#    accounts:
+#      - name:
+#        project:
+#        jsonPath:
+#        bucket:
+#        rootFolder: kayenta
+#        supportedTypes:
+#          - METRICS_STORE
+#          - OBJECT_STORE
+#          - CONFIGURATION_STORE
+
+  aws:
+    enabled: false
+#    accounts:
+#      - name:
+#        bucket:
+#        rootFolder: kayenta
+#        supportedTypes:
+#          - OBJECT_STORE
+#          - CONFIGURATION_STORE
+
+  datadog:
+    enabled: false
+#    accounts:
+#      - name: my-datadog-account
+#        apiKey: xxxx
+#        applicationKey: xxxx
+#        supportedTypes:
+#          - METRICS_STORE
+#        endpoint.baseUrl: https://app.datadoghq.com
+
+  prometheus:
+    enabled: false
+#    accounts:
+#      - name: my-prometheus-account
+#        endpoint:
+#          baseUrl: http://localhost:9090
+#        supportedTypes:
+#          - METRICS_STORE
+
+  gcs:
+    enabled: false
+
+  s3:
+    enabled: false
+
+  stackdriver:
+    enabled: false
+
+  memory:
+    enabled: false
+
+  configbin:
+    enabled: false
+
+keiko:
+  queue:
+    redis:
+      queueName: kayenta.keiko.queue
+      deadLetterQueueName: kayenta.keiko.queue.deadLetters
+
+redis:
+  connection: ${services.redis.connection}
+
+spectator:
+  applicationName: ${spring.application.name}
+  webEndpoint:
+    enabled: true
+
+swagger:
+  enabled: true
+  title: Kayenta API
+  description:
+  contact:
+  patterns:
+    - /admin.*
+    - /canary.*
+    - /canaryConfig.*
+    - /canaryJudgeResult.*
+    - /credentials.*
+    - /fetch.*
+    - /health
+    - /judges.*
+    - /metadata.*
+    - /metricSetList.*
+    - /metricSetPairList.*
+    - /pipeline.*
+
+security.basic.enabled: false
+management.security.enabled: false

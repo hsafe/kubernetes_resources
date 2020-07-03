@@ -1,0 +1,137 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+      "artifact.spinnaker.io/name": "\"armory-nginx\"",
+      "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+      "moniker.spinnaker.io/application": "\"armory\"",
+      "moniker.spinnaker.io/cluster": "\"nginx\""
+    },
+    "name": "armory-nginx",
+    "namespace": "${NAMESPACE}",
+    "labels": {
+      "app": "armory-nginx"
+    }
+  },
+  "spec": {
+    "strategy": {
+      "type": "RollingUpdate",
+      "rollingUpdate": {
+        "maxUnavailable": 0,
+        "maxSurge": "100%"
+      }
+    },
+    "replicas": ${NGINX_REPLICAS},
+    "selector": {
+      "matchLabels": {
+        "app": "armory-nginx"
+      }
+    },
+    "template": {
+      "metadata": {
+        "annotations": {
+          "artifact.spinnaker.io/location": "\"${NAMESPACE}\"",
+          "artifact.spinnaker.io/name": "\"armory-nginx\"",
+          "artifact.spinnaker.io/type": "\"kubernetes/deployment\"",
+          "moniker.spinnaker.io/application": "\"armory\"",
+          "moniker.spinnaker.io/cluster": "\"nginx\""
+        },
+        "labels": {
+          "app": "armory-nginx"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "resources": {
+              "requests": {
+                "cpu": "${NGINX_CPU}",
+                "memory": "${NGINX_MEMORY}"
+              },
+              "limits": {
+                "cpu": "${NGINX_CPU}",
+                "memory": "${NGINX_MEMORY}"
+              }
+            },
+            "name": "armory-nginx",
+            "image": "${LIBRARY_DOCKER_REGISTRY}/nginx",
+            "command": [
+              "bash",
+              "-c"
+            ],
+            "args": [
+              "bash /opt/spinnaker/config/default/fetch.sh nginx && nginx -g 'daemon off;'"
+            ],
+            "ports": [
+              {
+                "name": "http",
+                "containerPort": 80
+              },
+              {
+                "name": "https",
+                "containerPort": 443
+              },
+              {
+                "name": "api",
+                "containerPort": 8085
+              }
+            ],
+            "readinessProbe": {
+              "httpGet": {
+                "path": "/",
+                "port": 80
+              },
+              "initialDelaySeconds": 30,
+              "periodSeconds": 3,
+              "successThreshold": 5
+            },
+            "livenessProbe": {
+              "httpGet": {
+                "path": "/",
+                "port": 80
+              },
+              "initialDelaySeconds": 180,
+              "periodSeconds": 3
+            },
+            "volumeMounts": [
+              {
+                "name": "default-config",
+                "mountPath": "/opt/spinnaker/config/default"
+              },
+              {
+                "name": "custom-config",
+                "mountPath": "/etc/nginx/conf.d"
+              },
+              {
+                "name": "nginx-certs",
+                "mountPath": "/opt/nginx/certs"
+              }
+            ]
+          }
+        ],
+        "volumes": [
+          {
+            "name": "custom-config",
+            "configMap": {
+              "name": "custom-config"
+            }
+          },
+          {
+            "name": "nginx-certs",
+            "secret": {
+              "secretName": "${nginx_certs_secret_name}"
+            }
+          },
+          {
+            "name": "default-config",
+            "configMap": {
+              "name": "default-config"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
